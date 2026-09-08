@@ -1,7 +1,0 @@
-interface:
-  display_name: "生命科学竞赛实验记录"
-  short_description: "根据真实实验材料生成规范的生命科学竞赛实验记录 Word 文档"
-  default_prompt: "使用 $life-science-experiment-record 根据我提供的实验材料生成规范的中文实验记录 Word 文档。"
-
-policy:
-  allow_implicit_invocation: true
