@@ -1,10 +1,20 @@
 # Format specification
 
-Use this default only when the user has not supplied an official template. The official template takes precedence.
+This specification combines the fixed layout of the bundled official `第十二届全国大学生生命科学竞赛（科学探究类）实验记录` template with a consistent body style. The official file states that the experiment-record body has no required format; therefore the seven-section body typography below is a skill-level house style, not a competition rule.
+
+If the user supplies a newer or event-specific official template, that template takes precedence.
+
+## Official template basis
+
+- Source asset: `assets/实验记录模板.docx`.
+- Preserve the official page setup and three-line header.
+- Fill the experiment record sequence number and date range from verified metadata.
+- Do not copy the official template's removable instruction paragraphs into a generated record.
+- The official anonymity constraints remain mandatory: omit team number, school name, participant or adviser names, identifying collection/storage locations, identifiable people, uniforms, equipment labels, and institution-branded record paper from submitted text and figures. Names and institutions inside properly cited references are allowed.
 
 ## Document structure
 
-1. Header on every page: competition name, record number, experiment date range, and anonymity notice.
+1. Official header on every page: competition name, record number, experiment date range, anonymity notice, and the official bottom rule.
 2. Summary page: experiment title, `一、实验目的`, `二、实验内容`, and `三、实验结果`.
 3. Forced page break.
 4. Full record title followed by exactly seven primary sections:
@@ -20,18 +30,19 @@ Use this default only when the user has not supplied an official template. The o
 
 - A4 portrait: 210 × 297 mm (`11906 × 16838` DXA).
 - Margins: 20 mm on all sides (`1134` DXA).
-- Header distance: 10 mm (`567` DXA).
+- Header distance: official value `568` DXA (approximately 10 mm).
 - Footer distance: 17.5 mm (`992` DXA).
 - Body Chinese font: SimSun/宋体. Latin letters, digits, and units: Times New Roman.
-- Text color: black. No table of contents, page numbers, decorative rules, or colored fills by default.
+- Text color: black. No table of contents, page numbers, body decorations, or colored fills by default. The official header bottom rule is retained.
 
 ## Fixed typography
 
 | Element | Chinese font | Latin font | Size | Weight | Line spacing | Alignment and indent | Before/after |
 |---|---|---|---:|---|---|---|---|
-| Header competition name | 黑体 | Times New Roman | 15 pt | regular | single | left | 0/0 pt |
-| Header record number and dates | 黑体 | Times New Roman | 10.5 pt | bold | single | left; right tab allowed for number | 0/0 pt |
-| Header anonymity notice | 黑体 | Times New Roman | 10.5 pt | bold | single | justified | 0/0 pt |
+| Header competition name | 黑体 | 黑体 | 15 pt | regular | 1.5 lines | left; record number on the same line at the right | 0/0 pt |
+| Header record number | 黑体 | 黑体 | 10.5 pt | regular | 1.5 lines | right tab on the first header line | 0/0 pt |
+| Header date range | 黑体 | Times New Roman | 10.5 pt | bold | 1.5 lines | justified | 0/0 pt |
+| Header anonymity notice | 黑体 | Times New Roman | 10.5 pt | bold | 1.5 lines | justified | 0/0 pt |
 | Summary-page title | 黑体 | Times New Roman | 16 pt | bold | 1.5 lines | centered, no indent | 12/6 pt |
 | Summary primary headings | 黑体 | Times New Roman | 14 pt | bold | 1.5 lines | left, no first-line indent | 6/0 pt |
 | Summary body | 宋体 | Times New Roman | 12 pt | regular | 1.5 lines | justified, first-line indent 2 characters | 0/0 pt |
@@ -50,6 +61,8 @@ Use this default only when the user has not supplied an official template. The o
 | Explicit draft placeholder | 宋体 | Times New Roman | 12 pt | bold | 1.5 lines | follows containing paragraph | 0/0 pt |
 
 The generator uses half-point sizes: 32, 30, 28, 24, 21, and 18. It uses OOXML line values `360` for 1.5-line spacing and `240` for single spacing.
+
+Each official header paragraph has a black `0.75 pt` bottom rule (`w:sz="6"`, `w:space="1"`).
 
 ## Figures and tables
 

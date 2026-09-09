@@ -20,7 +20,7 @@ Required fields:
 
 ```json
 {
-  "competitionName": "第十一届全国大学生生命科学竞赛（科学探究类）实验记录",
+  "competitionName": "第十二届全国大学生生命科学竞赛（科学探究类）实验记录",
   "recordNumber": "15",
   "startDate": "2026-04-01",
   "endDate": "2026-04-20",
@@ -31,6 +31,7 @@ Required fields:
 ```
 
 - Dates must use `YYYY-MM-DD`.
+- With the bundled official template, `competitionName` must exactly be `第十二届全国大学生生命科学竞赛（科学探究类）实验记录`. A different competition requires its own official template review instead of silently changing the header.
 - `documentStatus` is `final` or `draft`.
 - `materialsHeading` is either `实验材料与试剂` or `研究对象、数据来源与分析工具`.
 

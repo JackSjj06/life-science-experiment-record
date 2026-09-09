@@ -4,6 +4,7 @@
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
+const crypto = require("crypto");
 
 function loadPackage(name) {
   try {
@@ -44,21 +45,25 @@ const {
   Table,
   TableCell,
   TableRow,
-  TabStopPosition,
   TabStopType,
   TextRun,
+  UnderlineType,
   VerticalAlign,
   WidthType,
 } = docx;
 
 const A4 = Object.freeze({ width: 11906, height: 16838 });
-const MARGINS = Object.freeze({ top: 1134, right: 1134, bottom: 1134, left: 1134, header: 567, footer: 992, gutter: 0 });
+const MARGINS = Object.freeze({ top: 1134, right: 1134, bottom: 1134, left: 1134, header: 568, footer: 992, gutter: 0 });
 const CONTENT_WIDTH = A4.width - MARGINS.left - MARGINS.right;
 const LINE = Object.freeze({ single: 240, oneAndHalf: 360 });
 const SIZE = Object.freeze({ title: 32, headerTitle: 30, primary: 28, body: 24, small: 21, note: 18 });
 const BLACK = "000000";
 const BODY_FONTS = Object.freeze({ ascii: "Times New Roman", hAnsi: "Times New Roman", eastAsia: "宋体", cs: "Times New Roman" });
 const HEADING_FONTS = Object.freeze({ ascii: "Times New Roman", hAnsi: "Times New Roman", eastAsia: "黑体", cs: "Times New Roman" });
+const OFFICIAL_HEADER_FONTS = Object.freeze({ ascii: "黑体", hAnsi: "黑体", eastAsia: "黑体", cs: "Times New Roman" });
+const OFFICIAL_COMPETITION_NAME = "第十二届全国大学生生命科学竞赛（科学探究类）实验记录";
+const OFFICIAL_TEMPLATE_PATH = path.resolve(__dirname, "..", "assets", "实验记录模板.docx");
+const OFFICIAL_TEMPLATE_SHA256 = "cbe1cb37c7bad04aadc1df42a0aab80b9f3236ece4589f68cdc730e6a39cfec8";
 const VALID_SECTION_KEYS = Object.freeze(["purpose", "principle", "materials", "procedure", "precautions", "results", "reflection"]);
 const SECTION_LABELS = Object.freeze({
   purpose: ["一", "实验目的"],
@@ -77,6 +82,15 @@ const PLACEHOLDER_PATTERN = /(?:待补充|TBD|TODO)/iu;
 
 function fail(message) {
   throw new Error(message);
+}
+
+function verifyOfficialTemplateAsset() {
+  if (!fs.existsSync(OFFICIAL_TEMPLATE_PATH)) fail(`Bundled official template is missing: ${OFFICIAL_TEMPLATE_PATH}`);
+  const buffer = fs.readFileSync(OFFICIAL_TEMPLATE_PATH);
+  const hash = crypto.createHash("sha256").update(buffer).digest("hex");
+  if (hash !== OFFICIAL_TEMPLATE_SHA256) {
+    fail("Bundled official template does not match the verified competition template. Restore assets/实验记录模板.docx before generating records.");
+  }
 }
 
 function parseArgs(argv) {
@@ -218,6 +232,9 @@ function validateAndNormalize(raw, inputDir) {
     documentStatus: metadata.documentStatus || "final",
     materialsHeading: metadata.materialsHeading || "实验材料与试剂",
   };
+  if (normalizedMetadata.competitionName !== OFFICIAL_COMPETITION_NAME) {
+    fail(`metadata.competitionName must be '${OFFICIAL_COMPETITION_NAME}' when using the bundled official template.`);
+  }
   if (!new Set(["final", "draft"]).has(normalizedMetadata.documentStatus)) fail("metadata.documentStatus must be 'final' or 'draft'.");
   if (!new Set(["实验材料与试剂", "研究对象、数据来源与分析工具"]).has(normalizedMetadata.materialsHeading)) {
     fail("metadata.materialsHeading must be '实验材料与试剂' or '研究对象、数据来源与分析工具'.");
@@ -294,9 +311,29 @@ function replaceTokens(text, record) {
   return text.replace(TOKEN_PATTERN, (_, kind, id) => kind === "figure" ? `图 ${record.figureNumbers.get(id)}` : `表 ${record.tableNumbers.get(id)}`);
 }
 
-function formatDate(date) {
+function underlinedHeaderRun(text, { bold = false, font = HEADING_FONTS, padding = 2 } = {}) {
+  const pad = "\u00a0".repeat(padding);
+  return new TextRun({
+    text: `${pad}${text}${pad}`,
+    font,
+    size: SIZE.small,
+    bold,
+    color: BLACK,
+    underline: { type: UnderlineType.SINGLE, color: BLACK },
+  });
+}
+
+function dateHeaderRuns(date) {
   const [year, month, day] = date.split("-").map(Number);
-  return `${year} 年 ${month} 月 ${day} 日`;
+  return [
+    underlinedHeaderRun(String(year), { bold: true }),
+    new TextRun({ text: "年", font: HEADING_FONTS, size: SIZE.small, bold: true, color: BLACK }),
+    underlinedHeaderRun(String(month), { bold: true }),
+    new TextRun({ text: "月", font: HEADING_FONTS, size: SIZE.small, bold: true, color: BLACK }),
+    underlinedHeaderRun(String(day), { bold: true }),
+    new TextRun({ text: "日", font: HEADING_FONTS, size: SIZE.small, bold: true, color: BLACK }),
+    underlinedHeaderRun("", { bold: true }),
+  ];
 }
 
 function titleParagraph(text) {
@@ -472,31 +509,35 @@ function renderBlock(block, record, listRefs) {
 }
 
 function createHeader(metadata) {
+  const officialBorder = { bottom: { style: BorderStyle.SINGLE, size: 6, color: BLACK, space: 1 } };
   return new Header({
     children: [
       new Paragraph({
         alignment: AlignmentType.LEFT,
-        spacing: { before: 0, after: 0, line: LINE.single, lineRule: "auto" },
-        tabStops: [{ type: TabStopType.RIGHT, position: TabStopPosition.MAX }],
+        border: officialBorder,
+        spacing: { before: 0, after: 0, line: LINE.oneAndHalf, lineRule: "auto" },
+        tabStops: [{ type: TabStopType.RIGHT, position: CONTENT_WIDTH }],
         children: [
-          new TextRun({ text: metadata.competitionName, font: HEADING_FONTS, size: SIZE.headerTitle, color: BLACK }),
-          new TextRun({ text: `\t序号：${metadata.recordNumber}`, font: HEADING_FONTS, size: SIZE.small, bold: true, color: BLACK }),
+          new TextRun({ text: metadata.competitionName, font: OFFICIAL_HEADER_FONTS, size: SIZE.headerTitle, color: BLACK }),
+          new TextRun({ text: "\t序号：", font: OFFICIAL_HEADER_FONTS, size: SIZE.small, color: BLACK }),
+          underlinedHeaderRun(metadata.recordNumber, { font: OFFICIAL_HEADER_FONTS, padding: 1 }),
         ],
       }),
       new Paragraph({
-        alignment: AlignmentType.LEFT,
-        spacing: { before: 0, after: 0, line: LINE.single, lineRule: "auto" },
-        children: [new TextRun({
-          text: `实验时间：${formatDate(metadata.startDate)}－${formatDate(metadata.endDate)}`,
-          font: HEADING_FONTS,
-          size: SIZE.small,
-          bold: true,
-          color: BLACK,
-        })],
+        alignment: AlignmentType.JUSTIFIED,
+        border: officialBorder,
+        spacing: { before: 0, after: 0, line: LINE.oneAndHalf, lineRule: "auto" },
+        children: [
+          new TextRun({ text: "实验时间：", font: HEADING_FONTS, size: SIZE.small, bold: true, color: BLACK }),
+          ...dateHeaderRuns(metadata.startDate),
+          new TextRun({ text: "－", font: HEADING_FONTS, size: SIZE.small, bold: true, color: BLACK }),
+          ...dateHeaderRuns(metadata.endDate),
+        ],
       }),
       new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
-        spacing: { before: 0, after: 0, line: LINE.single, lineRule: "auto" },
+        border: officialBorder,
+        spacing: { before: 0, after: 0, line: LINE.oneAndHalf, lineRule: "auto" },
         children: [new TextRun({
           text: "请勿出现团队编号、学校、参赛师生信息",
           font: HEADING_FONTS,
@@ -619,6 +660,7 @@ async function main() {
   }
   if (!args.input) fail("--input is required.");
   if (!args.check && !args.output) fail("--output is required unless --check is used.");
+  verifyOfficialTemplateAsset();
   const { data, inputDir } = readJson(args.input);
   const record = validateAndNormalize(data, inputDir);
   if (args.check) {
